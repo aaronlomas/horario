@@ -351,7 +351,7 @@ export default function App() {
 
       {/* Galaxy A05 Frame Simulation Note */}
       <div className="fixed bottom-0 left-0 right-0 p-2 text-center bg-black/80 backdrop-blur-xs text-[10px] text-white/20 border-t border-white/5 pointer-events-none">
-        Diseño optimizado para Galaxy A05 (vía Web App)
+        Horario para mi amada
       </div>
     </div>
   );
