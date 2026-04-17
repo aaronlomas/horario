@@ -13,7 +13,12 @@ import {
   User,
   X,
   Bell,
-  BellOff
+  BellOff,
+  Settings,
+  Download,
+  Upload,
+  RotateCcw,
+  Zap
 } from 'lucide-react';
 import { Subject, ScheduleItem, DayOfWeek } from './types';
 
@@ -68,7 +73,32 @@ export default function App() {
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+  const [now, setNow] = useState(new Date());
+
+  // Tick every 30 seconds to update 'Live' status
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isLive = (item: ScheduleItem) => {
+    const currentDay = DAYS[now.getDay() === 0 ? 6 : now.getDay() - 1];
+    if (item.day !== currentDay) return false;
+
+    const currentT = now.getHours() * 60 + now.getMinutes();
+    const [startH, startM] = item.startTime.split(':').map(Number);
+    const [endH, endM] = item.endTime.split(':').map(Number);
+    const startT = startH * 60 + startM;
+    const endT = endH * 60 + endM;
+
+    return currentT >= startT && currentT < endT;
+  };
+
+  const liveSubjectIds = useMemo(() => {
+    return new Set(schedule.filter(isLive).map(item => item.subjectId));
+  }, [schedule, now]);
 
   // Persistence
   useEffect(() => {
@@ -202,6 +232,17 @@ export default function App() {
     reader.readAsText(file);
   };
 
+  const resetData = () => {
+    if (confirm('¿Estás seguro de que quieres restablecer todo el horario? Se perderán tus cambios actuales.')) {
+      setSubjects(DEFAULT_SUBJECTS);
+      setSchedule(DEFAULT_SCHEDULE);
+      localStorage.removeItem('subjects');
+      localStorage.removeItem('schedule');
+      setIsSettingsModalOpen(false);
+      alert('Horario restablecido a los valores por defecto.');
+    }
+  };
+
   return (
     <div className="app-container">
       {/* Header */}
@@ -218,6 +259,13 @@ export default function App() {
               title="Activar Notificaciones"
             >
               {notifPermission === 'granted' ? <Bell size={24} /> : <BellOff size={24} />}
+            </button>
+            <button 
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="w-12 h-12 glass-card flex items-center justify-center text-white/60 hover:text-white transition-colors"
+              title="Configuración"
+            >
+              <Settings size={22} />
             </button>
             <button 
               onClick={() => { setEditingSubject(null); setIsSubjectModalOpen(true); }}
@@ -267,7 +315,14 @@ export default function App() {
                 className="glass-card p-4 relative group overflow-hidden"
               >
                 <div className="mb-2 flex justify-between items-start">
-                  <div className={`status-dot ${activeSubjectIdsForSelectedDay.has(subject.id) ? 'active' : ''}`} style={{ color: subject.color }}></div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`status-dot ${activeSubjectIdsForSelectedDay.has(subject.id) ? 'active' : ''}`} style={{ color: subject.color }}></div>
+                    {liveSubjectIds.has(subject.id) && (
+                      <span className="flex items-center text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-sm animate-pulse">
+                        <Zap size={6} className="mr-0.5 fill-current" /> VIVO
+                      </span>
+                    )}
+                  </div>
                   <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setEditingSubject(subject); setIsSubjectModalOpen(true); }} className="p-1 hover:text-white/80"><Edit3 size={14} /></button>
                     <button onClick={() => handleRemoveSubject(subject.id)} className="p-1 hover:text-red-400"><Trash2 size={14} /></button>
@@ -304,8 +359,15 @@ export default function App() {
                 .map((item) => {
                   const subject = subjects.find(s => s.id === item.subjectId);
                   const displayRoom = item.room || subject?.room;
+                  const itemIsLive = isLive(item);
+                  
                   return (
-                    <div key={item.id} className="glass-card p-4 flex items-center space-x-4">
+                    <div key={item.id} className={`glass-card p-4 flex items-center space-x-4 relative overflow-hidden ${itemIsLive ? 'ring-2 ring-red-500/50 bg-red-500/5' : ''}`}>
+                      {itemIsLive && (
+                        <div className="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl-lg flex items-center">
+                          <Zap size={8} className="mr-1 fill-current" /> EN VIVO
+                        </div>
+                      )}
                       <div className="flex flex-col items-center justify-center w-20 border-r border-white/10 pr-4">
                         <span className="text-[11px] font-bold text-white/60 whitespace-nowrap">{formatTo12h(item.startTime)}</span>
                         <span className="text-[9px] text-white/30 whitespace-nowrap">{formatTo12h(item.endTime)}</span>
@@ -345,6 +407,14 @@ export default function App() {
             day={selectedDay}
             onClose={() => setIsScheduleModalOpen(false)}
             onSave={handleAddScheduleItem}
+          />
+        )}
+        {isSettingsModalOpen && (
+          <SettingsModal 
+            onClose={() => setIsSettingsModalOpen(false)}
+            onExport={exportData}
+            onImport={importData}
+            onReset={resetData}
           />
         )}
       </AnimatePresence>
@@ -503,6 +573,59 @@ function ScheduleFormModal({ subjects, day, onClose, onSave }: { subjects: Subje
         >
           Programar
         </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function SettingsModal({ onClose, onExport, onImport, onReset }: { onClose: () => void, onExport: () => void, onImport: (e: ChangeEvent<HTMLInputElement>) => void, onReset: () => void }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+    >
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+        className="glass-card w-full max-w-sm p-6 space-y-8"
+      >
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold font-display">Configuración</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full"><X size={20} /></button>
+        </div>
+
+        <div className="space-y-3">
+          <button 
+            onClick={onExport}
+            className="w-full py-4 px-6 flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-2xl transition-colors group"
+          >
+            <div className="flex items-center">
+              <Download size={20} className="mr-3 text-white/40 group-hover:text-white" />
+              <span className="font-bold">Exportar Respaldo</span>
+            </div>
+          </button>
+
+          <label className="w-full py-4 px-6 flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-2xl transition-colors group cursor-pointer">
+            <div className="flex items-center">
+              <Upload size={20} className="mr-3 text-white/40 group-hover:text-white" />
+              <span className="font-bold">Importar Respaldo</span>
+            </div>
+            <input type="file" accept=".json" className="hidden" onChange={onImport} />
+          </label>
+
+          <div className="pt-4 border-t border-white/5">
+            <button 
+              onClick={onReset}
+              className="w-full py-4 px-6 flex items-center justify-between bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-2xl transition-colors group"
+            >
+              <div className="flex items-center">
+                <RotateCcw size={20} className="mr-3 opacity-60 group-hover:opacity-100" />
+                <span className="font-bold">Reiniciar Todo</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-white/20 text-center uppercase tracking-widest">Horario Galaxy v1.1</p>
       </motion.div>
     </motion.div>
   );
