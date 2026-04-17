@@ -3,24 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
   Trash2, 
   Edit3, 
-  Calendar as CalendarIcon, 
-  Clock, 
   MapPin, 
   User,
   X,
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
   Bell,
-  BellOff,
-  Download,
-  Upload
+  BellOff
 } from 'lucide-react';
 import { Subject, ScheduleItem, DayOfWeek } from './types';
 
@@ -178,10 +171,6 @@ export default function App() {
     setSchedule(prev => prev.filter(item => item.id !== id));
   };
 
-  const sendTestNotification = () => {
-    sendNotification('Prueba de Alerta', 'Esta es una notificación de prueba para verificar que el sistema de alarmas funciona en tu Galaxy A05.');
-  };
-
   const exportData = () => {
     const data = { subjects, schedule };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -194,7 +183,7 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const importData = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -224,13 +213,6 @@ export default function App() {
           </div>
           <div className="flex space-x-2">
             <button 
-              onClick={sendTestNotification}
-              className="w-12 h-12 glass-card flex items-center justify-center text-white/40 hover:text-white transition-colors"
-              title="Probar Notificación"
-            >
-              <Clock size={20} />
-            </button>
-            <button 
               onClick={requestPermission}
               className={`w-12 h-12 glass-card flex items-center justify-center transition-colors ${notifPermission === 'granted' ? 'text-green-400' : 'text-white/40'}`}
               title="Activar Notificaciones"
@@ -257,7 +239,7 @@ export default function App() {
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                   selectedDay === day 
                     ? 'bg-white text-black scale-105 shadow-xl' 
                     : 'bg-white/10 text-white/60 hover:bg-white/20'
