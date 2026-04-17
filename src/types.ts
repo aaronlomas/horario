@@ -14,4 +14,5 @@ export interface ScheduleItem {
   day: DayOfWeek;
   startTime: string; // HH:mm
   endTime: string;   // HH:mm
+  room?: string;
 }

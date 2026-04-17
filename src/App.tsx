@@ -20,9 +20,9 @@ import { Subject, ScheduleItem, DayOfWeek } from './types';
 const DAYS: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const DEFAULT_SUBJECTS: Subject[] = [
-  { id: '1', name: 'LOGÍSTICA (1)', color: '#8b5cf6', teacher: 'Profesor de Logística', room: 'AULA 6 FACEN' },
-  { id: '2', name: 'PERITAJE CONTABLE (1)', color: '#3b82f6', teacher: 'Profesor de Peritaje', room: 'AULA 9 FACEN' },
-  { id: '3', name: 'CONTABILIDAD SUPERIOR II (4)', color: '#f59e0b', teacher: 'Profesor de Contabilidad', room: 'AULA 4/5 FACEN' },
+  { id: '1', name: '022B10051 LOGÍSTICA (1)', color: '#a855f7', teacher: 'Profesor de Logística', room: 'AULA 6 FACEN' },
+  { id: '2', name: '022B10052 PERITAJE CONTABLE (1)', color: '#eab308', teacher: 'Profesor de Peritaje', room: 'AULA 9 FACEN' },
+  { id: '3', name: '022B10039 CONTABILIDAD SUPERIOR II (4)', color: '#f59e0b', teacher: 'Profesor de Contabilidad', room: 'AULA 4/5 FACEN' },
 ];
 
 const DEFAULT_SCHEDULE: ScheduleItem[] = [
@@ -31,12 +31,12 @@ const DEFAULT_SCHEDULE: ScheduleItem[] = [
   // Martes
   { id: 's2', subjectId: '2', day: 'Martes', startTime: '18:00', endTime: '20:00' },
   // Jueves
-  { id: 's3', subjectId: '3', day: 'Jueves', startTime: '16:00', endTime: '18:00' },
+  { id: 's3', subjectId: '3', day: 'Jueves', startTime: '16:00', endTime: '18:00', room: 'AULA 4 FACEN' },
   { id: 's4', subjectId: '2', day: 'Jueves', startTime: '20:00', endTime: '22:00' },
   // Viernes
   { id: 's5', subjectId: '1', day: 'Viernes', startTime: '20:00', endTime: '23:00' },
   // Sábado
-  { id: 's6', subjectId: '3', day: 'Sábado', startTime: '18:00', endTime: '21:00' },
+  { id: 's6', subjectId: '3', day: 'Sábado', startTime: '18:00', endTime: '21:00', room: 'AULA 5 FACEN' },
 ];
 
 const formatTo12h = (time: string) => {
@@ -93,7 +93,7 @@ export default function App() {
     if (notifPermission === 'granted') {
       new Notification(title, { 
         body,
-        icon: 'https://cdn-icons-png.flaticon.com/512/3587/3587133.png'
+        icon: '/assets/margarita.jpeg'
       });
     }
   };
@@ -303,6 +303,7 @@ export default function App() {
                 .sort((a, b) => a.startTime.localeCompare(b.startTime))
                 .map((item) => {
                   const subject = subjects.find(s => s.id === item.subjectId);
+                  const displayRoom = item.room || subject?.room;
                   return (
                     <div key={item.id} className="glass-card p-4 flex items-center space-x-4">
                       <div className="flex flex-col items-center justify-center w-20 border-r border-white/10 pr-4">
@@ -315,7 +316,7 @@ export default function App() {
                           {subject?.name || 'Materia eliminada'}
                         </h4>
                         <div className="flex space-x-3 mt-1">
-                          {subject?.room && <span className="text-xs text-white/40 flex items-center"><MapPin size={10} className="mr-1" />{subject.room}</span>}
+                          {displayRoom && <span className="text-xs text-white/40 flex items-center"><MapPin size={10} className="mr-1" />{displayRoom}</span>}
                         </div>
                       </div>
                       <button onClick={() => handleRemoveScheduleItem(item.id)} className="text-white/20 hover:text-red-400">
@@ -429,6 +430,7 @@ function ScheduleFormModal({ subjects, day, onClose, onSave }: { subjects: Subje
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('09:00');
+  const [room, setRoom] = useState('');
 
   return (
     <motion.div 
@@ -478,13 +480,24 @@ function ScheduleFormModal({ subjects, day, onClose, onSave }: { subjects: Subje
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-white/40 uppercase tracking-widest pl-1">Salón (opcional)</label>
+            <input 
+              placeholder="Ej: AULA 4 FACEN"
+              className="glass-input w-full"
+              value={room}
+              onChange={e => setRoom(e.target.value)}
+            />
+            <p className="text-[10px] text-white/30 pl-1">Si se deja vacío, se usará el salón predeterminado de la materia.</p>
+          </div>
+
           <div className="p-4 bg-white/5 rounded-xl text-center">
             <p className="text-sm text-white/60">Programando para el día <span className="text-white font-bold">{day}</span></p>
           </div>
         </div>
 
         <button 
-          onClick={() => onSave({ id: Math.random().toString(36).substr(2, 9), subjectId, day, startTime, endTime })}
+          onClick={() => onSave({ id: Math.random().toString(36).substr(2, 9), subjectId, day, startTime, endTime, room: room || undefined })}
           disabled={!subjectId}
           className="w-full py-4 rounded-xl bg-white text-black font-bold disabled:opacity-50 active:scale-95 transition-all"
         >
