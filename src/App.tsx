@@ -25,8 +25,8 @@ import { Subject, ScheduleItem, DayOfWeek } from './types';
 const DAYS: DayOfWeek[] = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const DEFAULT_SUBJECTS: Subject[] = [
-  { id: '1', name: '022B10051 LOGÍSTICA (1)', color: '#a855f7', teacher: 'Profesor de Logística', room: 'AULA 6 FACEN' },
-  { id: '2', name: '022B10052 PERITAJE CONTABLE (1)', color: '#eab308', teacher: 'Profesor de Peritaje', room: 'AULA 9 FACEN' },
+  { id: '1', name: '022B10051 LOGÍSTICA (1)', color: '#8b5cf6', teacher: 'Profesor de Logística', room: 'AULA 6 FACEN' },
+  { id: '2', name: '022B10052 PERITAJE CONTABLE (1)', color: '#3b82f6', teacher: 'Profesor de Peritaje', room: 'AULA 9 FACEN' },
   { id: '3', name: '022B10039 CONTABILIDAD SUPERIOR II (4)', color: '#f59e0b', teacher: 'Profesor de Contabilidad', room: 'AULA 4/5 FACEN' },
 ];
 
