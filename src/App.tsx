@@ -54,18 +54,27 @@ const formatTo12h = (time: string) => {
 
 export default function App() {
   const [subjects, setSubjects] = useState<Subject[]>(() => {
-    const saved = localStorage.getItem('subjects');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.length > 0 ? parsed : DEFAULT_SUBJECTS;
+    try {
+      const saved = localStorage.getItem('subjects');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SUBJECTS;
+      }
+    } catch (e) {
+      console.error('Error loading subjects from localStorage:', e);
     }
     return DEFAULT_SUBJECTS;
   });
+
   const [schedule, setSchedule] = useState<ScheduleItem[]>(() => {
-    const saved = localStorage.getItem('schedule');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.length > 0 ? parsed : DEFAULT_SCHEDULE;
+    try {
+      const saved = localStorage.getItem('schedule');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SCHEDULE;
+      }
+    } catch (e) {
+      console.error('Error loading schedule from localStorage:', e);
     }
     return DEFAULT_SCHEDULE;
   });
